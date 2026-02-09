@@ -472,6 +472,7 @@ main.stacked {
 }
 
 .project-actions {
+  align-items: center;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -596,3 +597,112 @@ main.stacked {
 }
 
 
+
+
+.project-pill-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.project-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  background: rgba(14, 110, 110, 0.15);
+  color: var(--teal-1);
+  margin-bottom: 0;
+}
+
+.project-tag.brand-google {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(14, 20, 20, 0.12);
+  color: transparent;
+  background-image: linear-gradient(90deg, #4285F4 0%, #DB4437 28%, #F4B400 56%, #0F9D58 84%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.project-tag.brand-uw {
+  background: rgba(75, 46, 131, 0.12);
+  border: 1px solid rgba(75, 46, 131, 0.3);
+  color: #4b2e83;
+  font-weight: 600;
+}
+
+
+.project-card.is-link {
+  cursor: pointer;
+}
+
+.project-card.is-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 38px rgba(14, 20, 20, 0.22);
+}
+
+.project-hint {
+  font-size: 13px;
+  color: rgba(27, 42, 42, 0.55);
+  line-height: 1;
+}
+
+
+.profile-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 62%;
+  transform: scale(1.08);
+  border-radius: 20px;
+}
+
+
+.build-title {
+  position: relative;
+  display: inline-block;
+}
+
+.build-word {
+  display: inline-block;
+  position: relative;
+  font-weight: 600;
+  color: transparent;
+}
+
+.build-word::before {
+  content: "Build Logs";
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 1;
+  color: var(--ink);
+  transition: opacity 1s ease;
+}
+
+.build-word::after {
+  content: "Blogs";
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  font-weight: 700;
+  color: var(--ink);
+  transition: opacity 1s ease;
+}
+
+@keyframes buildMorph_unused {
+  0% { color: inherit; }
+  45% { color: inherit; }
+  70% { color: rgba(27, 42, 42, 0.15); }
+  100% { color: transparent; }
+}
+
+.build-word.fade-done::before { opacity: 0; }
+.build-word.fade-done::after { opacity: 1; }

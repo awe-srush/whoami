@@ -37,3 +37,24 @@ if (sections.length) {
   );
   sections.forEach((section) => observer.observe(section));
 }
+
+
+const projectCards = document.querySelectorAll('.project-card.is-link');
+projectCards.forEach((card) => {
+  card.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target && target.closest('.link-pill')) return;
+    const link = card.getAttribute('data-link');
+    if (link) window.location.hash = link;
+  });
+});
+
+
+const buildWord = document.querySelector('.build-word');
+if (buildWord) {
+  setTimeout(() => {
+    buildWord.classList.add('fade-done');
+    const title = buildWord.closest('.build-title');
+    if (title) title.setAttribute('aria-label', "Srushti's Blogs");
+  }, 2200);
+}

@@ -16,8 +16,8 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="nav-group">
-        <a class="tab" href="index.html#top">Portfolio</a>
-        <a class="tab active" href="grad-life.html">Grad Life</a>
+        <a class="tab" href="index.html#top">Home</a>
+        <a class="tab active" href="grad-life.html">Srushti's Build Logs</a>
       </div>
       <div class="nav-group">
         <a class="tab ghost" href="index.html#experience">Experience</a>
@@ -30,29 +30,110 @@
   <main class="stacked">
     <article class="diary diary-post">
       <div class="diary-cover">
-        <h2>Building systems, one week at a time</h2>
-        <p>March 2026</p>
+        <h2>Build Log #01: The Case of the Vanishing Memory</h2>
+        <p>February 2026</p>
       </div>
 
       <div class="diary-content">
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vitae magna in lorem sollicitudin vulputate. Integer accumsan magna quis nisl tempor, sed placerat magna feugiat. Nulla facilisi. Etiam pretium sit amet leo id facilisis.</p>
-        <p>Aliquam erat volutpat. Nunc blandit, ipsum at tempor iaculis, lectus purus consectetur justo, sed faucibus ipsum elit at justo. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>
+        <p>Some failures don’t announce themselves.</p>
+        <p>No crash.<br>No error logs.<br>No clean line between cause and effect.</p>
+        <p>Just a system that slowly, quietly forgets how to breathe.</p>
+        <p>This was one of those failures.</p>
 
-        <div class="diary-photo">
-          <div class="photo-frame">
-            <div class="photo-placeholder">Photo</div>
+        <h3>The crime scene</h3>
+        <p>I had recently stepped into the role of Technical Lead for Performance Engineering, and we were running a large-scale load test simulating 20,000 concurrent users. In practice, that means thousands of requests hitting the system simultaneously , the kind of pressure that reveals behaviors you will never see in functional testing.</p>
+        <p>At first glance, everything looked stable.</p>
+        <p>Then memory usage began to climb.</p>
+        <p>Slowly. Consistently. Without ever returning to baseline.</p>
+        <p>Eventually, the inevitable happened: every application process froze.</p>
+        <p>The only clue left behind was frustratingly vague:</p>
+        <p><em>The leak appears to originate in the Informix database.</em></p>
+        <p>No stack trace. No obvious regression. Just a growing suspicion that something fundamental wasn’t being cleaned up.</p>
+
+        <h3>Resisting the obvious path</h3>
+        <p>Informix, a relational database used heavily in enterprise and telecom systems, manages memory through internal segments and pools , structured regions where memory is allocated and later freed.</p>
+        <p>The initial suggestion was to comb through thousands of SQL queries and identify the problematic ones.</p>
+        <p>That approach would have been exhaustive, time-consuming, and , more importantly , speculative.</p>
+        <p>Instead of starting at the query layer, I chose to step back and ask a different question:</p>
+        <p><em>What if the queries are innocent, and the failure lives deeper , in how memory itself is managed?</em></p>
+        <p>That decision shaped everything that followed.</p>
+
+        <h3>Watching memory misbehave</h3>
+        <p>I began by revisiting Informix’s internal memory architecture , not the parts most application developers touch, but the mechanisms that quietly keep long-running systems alive.</p>
+        <p>Using Informix documentation as a guide, I wrote a custom analysis script to:</p>
+        <ul>
+          <li>inspect memory pools over time,</li>
+          <li>measure allocation and deallocation rates,</li>
+          <li>and surface pools whose behavior deviated from normal expectations.</li>
+        </ul>
+        <p>This reframed the problem.</p>
+        <p>Instead of guessing which queries were bad, I could now observe where memory was accumulating.</p>
+        <p>One pool stood out.</p>
+        <p>Its name: ritem.</p>
+
+        <h3>The anomaly</h3>
+        <p>The numbers were immediately suspicious.</p>
+        <ul>
+          <li>~6.1 million allocations</li>
+          <li>~6 million originating from the exact same memory location</li>
+        </ul>
+        <p>Healthy systems don’t behave like that.</p>
+        <p>I pulled memory dumps from the affected locations and started comparing them , buffer by buffer , looking for common structure.</p>
+        <p>That’s when a pattern emerged.</p>
+        <p>Each stuck buffer contained two long VARCHAR strings , variable-length text fields used by the database. Once these buffers were allocated, they were never reclaimed.</p>
+        <p>The leak wasn’t noisy. It was persistent.</p>
+        <p>And persistence is often more dangerous than failure.</p>
+
+        <h3>Pulling on the thread</h3>
+        <p>To trace those VARCHARs back to their source, I unloaded and inspected the application’s major tables, mapping:</p>
+        <ul>
+          <li>where long VARCHARs were used,</li>
+          <li>how those tables were keyed,</li>
+          <li>and what structural patterns they shared.</li>
+        </ul>
+        <p>This was slow work. Methodical work. The kind that doesn’t reward shortcuts.</p>
+        <p>Eventually, the commonality became clear:</p>
+        <p>Every affected table used a composite primary key composed of two VARCHAR columns.</p>
+        <p>For context: a primary key uniquely identifies a row in a table. A composite key does this using multiple columns. Using VARCHARs in such keys is valid , but it turns out to be a sharp edge.</p>
+
+        <h3>The root cause</h3>
+        <p>With this evidence, the IBM Informix engineering team was able to pinpoint the issue:</p>
+        <p>An internal cleaner thread responsible for reclaiming memory failed to delete rows from tables whose composite primary keys consisted of VARCHAR columns. This resulted in a silent memory leak within Informix’s internal data structures.</p>
+        <p>Not in application code. Not in SQL logic. But inside the database engine itself.</p>
+        <p>The kind of issue that survives precisely because it sits below the layers most teams observe.</p>
+
+        <h3>Resolution and impact</h3>
+        <p>Once addressed:</p>
+        <ul>
+          <li>overall memory utilization improved by ~10%,</li>
+          <li>the system remained stable under sustained 20K-user load,</li>
+          <li>and the issue did not recur.</li>
+        </ul>
+        <p>I was recognized by the Director of Engineering at Cisco for owning the problem end-to-end , not just identifying the issue, but coordinating across internal teams and external vendors to drive it to resolution.</p>
+
+        <h3>A note on leadership</h3>
+        <p>This investigation later became part of my leadership essay for MIT’s System Design &amp; Management (SDM) program, and ultimately led to an interview.</p>
+        <p>Not because it was a clever bug fix.</p>
+        <p>But because it reflected something deeper about how I approach systems.</p>
+
+        <h3>Closing the case</h3>
+        <p>Over time, I’ve learned that the most consequential failures in large systems rarely come from a single bad line of code.</p>
+        <p>They emerge from:</p>
+        <ul>
+          <li>assumptions that no longer hold,</li>
+          <li>edge cases that quietly compound,</li>
+          <li>and abstractions that leak just enough to matter.</li>
+        </ul>
+        <p>Senior systems work isn’t about reacting quickly to loud failures. It’s about staying attentive to the quiet ones.</p>
+        <p>It’s about knowing when to zoom in , and when to step back and question the frame itself.</p>
+        <p>This wasn’t just a memory leak.</p>
+        <p>It was a reminder that long-running systems demand long attention spans , and that real ownership means following the problem to whatever layer it chooses to hide.</p>
+        <p><strong>Case closed.</strong></p>
+      </div>
           </div>
-          <p class="muted">Caption or note about this moment.</p>
+          
         </div>
-
-        <p>Curabitur facilisis ipsum nec ex cursus, in dictum mauris luctus. Duis nec aliquet eros. Phasellus euismod, justo a tincidunt suscipit, est sem consectetur magna, et fringilla felis felis id massa.</p>
-
-        <div class="diary-photo">
-          <div class="photo-frame wide">
-            <div class="photo-placeholder">Wide Photo</div>
-          </div>
-          <p class="muted">Another image or diagram placeholder.</p>
-        </div>
+        
       </div>
     </article>
   </main>
