@@ -52,9 +52,27 @@ projectCards.forEach((card) => {
 
 const buildWord = document.querySelector('.build-word');
 if (buildWord) {
+  const target = 'Blogs';
   setTimeout(() => {
-    buildWord.classList.add('fade-done');
-    const title = buildWord.closest('.build-title');
-    if (title) title.setAttribute('aria-label', "Srushti's Blogs");
+    buildWord.classList.add('is-typing');
+    let current = buildWord.textContent;
+    const backspace = setInterval(() => {
+      current = current.slice(0, -1);
+      buildWord.textContent = current;
+      if (current.length === 0) {
+        clearInterval(backspace);
+        let typed = '';
+        const type = setInterval(() => {
+          typed += target[typed.length];
+          buildWord.textContent = typed;
+          if (typed === target) {
+            clearInterval(type);
+            buildWord.classList.remove('is-typing');
+            const title = buildWord.closest('.build-title');
+            if (title) title.setAttribute('aria-label', "Srushti's Blogs");
+          }
+        }, 100);
+      }
+    }, 80);
   }, 2200);
 }

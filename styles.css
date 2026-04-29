@@ -397,6 +397,9 @@ main.stacked {
 .s18 { top: 24%; left: 74%; animation-delay: 3.4s; }
 .s19 { top: 88%; left: 6%; animation-delay: 3.6s; }
 .s20 { top: 6%; left: 58%; animation-delay: 3.8s; }
+.s21 { top: 26%; left: 48%; animation-delay: 4s; }
+.s22 { top: 58%; right: 28%; animation-delay: 4.2s; }
+.s23 { top: 92%; left: 50%; animation-delay: 4.4s; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
@@ -546,6 +549,12 @@ main.stacked {
   z-index: 1;
 }
 
+.diary-content a {
+  color: var(--teal-1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .diary-photo {
   margin: 22px 0;
 }
@@ -671,38 +680,17 @@ main.stacked {
 
 .build-word {
   display: inline-block;
-  position: relative;
   font-weight: 600;
-  color: transparent;
-}
-
-.build-word::before {
-  content: "Build Logs";
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 1;
   color: var(--ink);
-  transition: opacity 1s ease;
 }
 
-.build-word::after {
-  content: "Blogs";
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
-  font-weight: 700;
-  color: var(--ink);
-  transition: opacity 1s ease;
+.build-word.is-typing::after {
+  content: "|";
+  font-weight: 300;
+  animation: blink 0.7s step-end infinite;
 }
 
-@keyframes buildMorph_unused {
-  0% { color: inherit; }
-  45% { color: inherit; }
-  70% { color: rgba(27, 42, 42, 0.15); }
-  100% { color: transparent; }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
-
-.build-word.fade-done::before { opacity: 0; }
-.build-word.fade-done::after { opacity: 1; }

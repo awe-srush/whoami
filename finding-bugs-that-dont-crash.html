@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build Log #02: Finding Bugs That Don't Crash | Srushti Chaukhande</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="grid"></div>
+  </div>
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="nav-group">
+        <a class="tab" href="index.html#top">Home</a>
+        <a class="tab active" href="build-logs.html">Srushti's Build Logs</a>
+      </div>
+      <div class="nav-group">
+        <a class="tab ghost" href="index.html#experience">Experience</a>
+        <a class="tab ghost" href="index.html#projects">Projects</a>
+        <a class="tab ghost" href="index.html#skills">Skills</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="stacked">
+    <article class="diary diary-post">
+      <div class="diary-cover">
+        <h2>Build Log #02: Finding Bugs That Don't Crash</h2>
+        <p>April 2026</p>
+      </div>
+
+      <div class="diary-content">
+        <p>I was reading an OpenSSL issue when the question hit me.</p>
+        <p><a href="https://github.com/openssl/openssl/issues/30818" target="_blank" rel="noreferrer">Issue #30818</a>. Filed April 14, 2026. The report was simple: an OpenSSL TLS 1.3 client receives a ServerHello without a KeyShare extension. OpenSSL sends back an <code>IllegalParameter</code> alert. RFC 8446 Section 6.2 says it should send <code>MissingExtension</code>.</p>
+        <p>Nothing crashes. No memory corruption. Every fuzzer in the world would walk right past it.</p>
+        <p>And yet, it's wrong.</p>
+        <p>Not wrong in the way we usually think about software bugs. The code compiles. It runs. It handles the error. It even terminates the connection, which is the right thing to do. But it terminates it with the wrong word. The wrong alert code. A subtle violation of what the specification <em>actually requires</em>.</p>
+        <p>I sat with that for a while.</p>
+
+        <h3>The gap no one is looking at</h3>
+        <p>The timing was hard to ignore.</p>
+        <p>Weeks earlier, Anthropic had announced Claude Mythos Preview and Project Glasswing. A model capable of autonomously finding thousands of zero-day vulnerabilities across every major operating system and browser. Bugs that had survived decades of human review and millions of automated test runs. A 27-year-old vulnerability in OpenBSD. A 17-year-old remote code execution flaw in FreeBSD's NFS server. Mozilla patched 271 vulnerabilities in a single Firefox release after running Mythos against their codebase.</p>
+        <p>The message was clear: AI has crossed a threshold for finding implementation bugs. Memory corruption, type confusion, buffer overflows, race conditions, the class of defects where code does something it shouldn't. Fuzzers find them probabilistically. Models like Mythos now find them with extraordinary precision and scale.</p>
+        <p>But here's the thing.</p>
+        <p>Every one of those tools operates under a shared assumption: <em>the code's intent is correct, and the implementation has flaws.</em></p>
+        <p>Issue #30818 breaks that assumption.</p>
+        <p>OpenSSL's code intends to reject the malformed ServerHello. It does reject it. The implementation works exactly as the developer wrote it. The flaw is that what the developer wrote doesn't match what the RFC says. The intent itself is wrong. Not because the developer was careless, but because RFC 8446 distributes the answer across five different sections, and threading that needle requires holding the entire specification in your head simultaneously.</p>
+        <p><em>What if the code doesn't crash, has no memory bugs, passes every fuzzer, but simply doesn't do what the protocol specification says it should?</em></p>
+        <p>That's the question I couldn't stop thinking about.</p>
+
+        <h3>Why specifications are hard</h3>
+        <p>An RFC is a strange document. It's written in English, but it carries the weight of a contract. Words like MUST, SHALL, and MUST NOT aren't suggestions. They're normative requirements that every conforming implementation is expected to follow. The problem is that natural language is inherently ambiguous, and protocol specifications are inherently complex.</p>
+        <p>Take the OpenSSL bug. To understand why <code>MissingExtension</code> is the correct alert, you need to follow a chain across five sections of RFC 8446:</p>
+        <ul>
+          <li><strong>Section 2</strong> establishes that EC(DHE) key exchange is mandatory in TLS 1.3.</li>
+          <li><strong>Section 4.2.8</strong> says ServerHello MUST contain exactly one KeyShareEntry.</li>
+          <li><strong>Section 4.2</strong> places <code>key_share</code> explicitly in the ServerHello extension table.</li>
+          <li><strong>Section 4.1.3</strong> says missing key parameters require aborting the handshake with an appropriate alert.</li>
+          <li><strong>Section 6.2</strong> defines which alert is appropriate: <code>missing_extension</code>, specifically.</li>
+        </ul>
+        <p>No single section contains the complete answer. The requirement is distributed. And this is one bug, in one protocol, in one implementation.</p>
+        <p>Now multiply that across every MUST statement in every RFC that every cryptographic library claims to implement.</p>
+        <p>A developer reading Section 4.1.3 might reasonably think "illegal parameter," the server sent something wrong. But Section 6.2 draws a precise distinction between a parameter that's illegal and an extension that's missing. That distinction matters. When implementations deviate from the spec in different ways, the interactions between those deviations create edge cases that neither implementation's developers anticipated. The server that silently accepts what the RFC says to reject. The client that sends the wrong error code. These are the seams that attackers probe.</p>
+
+        <h3>What I built</h3>
+        <p>SpecTrace is my answer to this gap.</p>
+        <p>The core idea is simple: take the RFC specification, extract its normative requirements into structured rules, find the code that's supposed to implement each rule, and check whether it actually does.</p>
+        <p>But the execution matters. The trap I wanted to avoid was the "throw everything at the LLM" approach. Paste the entire RFC and the entire codebase into a prompt and ask "does this conform?" That's what existing tools like RFCAudit do, and while it works sometimes, it's fundamentally non-deterministic. You get different answers on different runs. You can't audit the reasoning. And at 18% false positive rates, you spend more time checking the checker than checking the code.</p>
+        <p>So I decomposed the problem.</p>
+        <p><strong>Stage 1: Rule Extraction.</strong> An LLM reads scoped sections of the RFC and extracts every normative statement, every MUST, MUST NOT, SHALL, SHOULD, into a typed JSON schema. Each rule gets classified by type (is it a value constraint? a presence requirement? a conditional action?), tagged with protocol keywords (message types, extension names, alert codes), and rated for checkability. That last field is critical: it forces the system to be honest about what can and can't be verified structurally. Some rules, like "use a cryptographically secure random number generator," are genuinely uncheckable through static analysis. Saying so upfront is better than producing a false judgment later.</p>
+        <p><strong>Stage 2: Code Localization.</strong> This stage uses zero LLM tokens. It takes the protocol keywords from each rule and runs grep against the target codebase. <code>key_share</code>, <code>KeyShare</code>, <code>missing_extension</code>, <code>SSL_AD_MISSING_EXTENSION</code>. Implementation authors read the RFC and name things after it. Simple substring matching finds the relevant files reliably. Tree-sitter then parses those files, identifies function boundaries, and ranks candidates by how many distinct RFC terms co-occur in each function.</p>
+        <p>This is the step that makes everything else tractable. Thousands of source files reduce to a handful of functions. No tokens spent.</p>
+        <p><strong>Stage 3: Conformance Judgment.</strong> The LLM receives one rule and one function. Not the entire RFC and the entire codebase. One scoped question with one scoped piece of evidence. And critically, the LLM has tools: it can look up any function by name, search for any symbol across the codebase, and trace caller/callee relationships. When it sees a call to <code>check_in_list()</code>, it can pull up that function's source. When it needs to know where a struct field gets populated, it can search for it.</p>
+        <p>The judgment loop is capped at 10 tool calls. The LLM reads, reasons, explores, and produces a verdict: conforms, violates, not applicable, or ambiguous. Every judgment comes with specific line numbers, code snippets, and reasoning about which paths were checked.</p>
+
+        <h3>What it found</h3>
+        <p>Tested against OpenSSL's TLS 1.3 implementation, SpecTrace produced 33 judgments across 11 sections of RFC 8446, using 245 tool calls.</p>
+        <p>The headline result: SpecTrace surfaced the <code>signature_algorithms_cert</code> gap, an extension that RFC 8446 Section 9.2 says every TLS 1.3 implementation MUST implement, but that OpenSSL never generates. It parses the extension when received, but never includes it in outgoing messages. The LLM found this by correlating a missing entry in a switch statement in one file with a comment in another file that says, plainly: "We do not generate signature_algorithms_cert at present."</p>
+        <p>No single file contained the complete picture. The LLM traced it in 6 tool calls and 24,430 tokens.</p>
+        <p>It also found a filtering asymmetry between <code>key_share</code> and <code>supported_groups</code>. The supported_groups extension constructor applies protocol-level filters that the key_share constructor does not. A group could theoretically appear in one but be filtered from the other. The LLM traced through 8 functions across 4 files to find this, correctly flagging it as "ambiguous" because triggering it depends on runtime configuration.</p>
+        <p>These are not the kind of findings that make headlines. No CVE. No exploit. No "AI finds critical zero-day." But they are exactly the kind of findings that matter for protocol correctness. The quiet deviations that create the seams between implementations.</p>
+
+        <h3>Why decomposition matters</h3>
+        <p>Here's the number that tells the story: on irrelevant code, the function-level approach used 95% fewer tokens than file-level prompting. On complex cross-file analysis, it used <em>more</em> tokens, but found things that file-level prompting missed entirely.</p>
+        <p>The system naturally allocates effort proportional to complexity. When the LLM sees an irrelevant function, it stops immediately. When it encounters a complex case, it uses its full tool budget. This wasn't explicitly programmed. It emerges from giving the model a narrow task and the tools to explore.</p>
+        <p>The earlier file-level approach burned 3.27 million tokens across 48 judgments. 44% of those judgments were not_applicable. 1.32 million tokens spent for zero useful information.</p>
+        <p>Decomposition isn't just an engineering convenience. It's how you make LLM-based analysis auditable. Every intermediate artifact is inspectable: the extracted rules, the localization results, the tool call traces. When the system says "violates," you can read the same code it read and check its reasoning. When it says "ambiguous," it tells you why.</p>
+
+        <h3>The bigger picture</h3>
+        <p>AI security tooling is having its moment. Mythos finds thousands of zero-days. Fuzzers get smarter. Static analyzers get deeper. All of this is extraordinary progress on a critical problem.</p>
+        <p>But it's progress on one class of defect: <em>does this code do something it shouldn't?</em></p>
+        <p>SpecTrace asks the complementary question: <em>does this code do what the specification says it should?</em></p>
+        <p>These are different failure classes. Different methodologies. Different outputs. A fuzzer doesn't know what RFC 8446 says. A vulnerability scanner doesn't check whether an alert code matches Section 6.2's requirements. And an LLM prompted with "find vulnerabilities in this code" will never flag <code>IllegalParameter</code> versus <code>MissingExtension</code>, because from a pure code perspective, both are valid error-handling paths.</p>
+        <p>The gap between "does this code crash?" and "does this code do what the specification requires?" is where SpecTrace lives.</p>
+
+        <h3>What's next</h3>
+        <p>SpecTrace is an active research project. The pipeline works end-to-end, RFC in, conformance judgments out, but there's a lot left to do.</p>
+        <p>The most exciting next step is multi-implementation analysis: running the same RFC 8446 rules against OpenSSL, BoringSSL, mbedTLS, and wolfSSL simultaneously. Places where implementations interpret the specification differently are exactly where interoperability bugs live. If OpenSSL sends <code>IllegalParameter</code> and mbedTLS sends <code>MissingExtension</code> for the same condition, that divergence is worth knowing about.</p>
+        <p>Beyond that: reproducibility measurement across multiple runs, comparison against monolithic prompting baselines, and multi-model evaluation to understand how model choice affects extraction and judgment quality.</p>
+
+        <h3>Closing thoughts</h3>
+        <p>The most consequential bugs aren't always the loudest ones.</p>
+        <p>Sometimes they're a wrong alert code in an error path nobody tests. A missing extension that the RFC says to include but that works fine without. A filtering asymmetry between two functions that construct related messages.</p>
+        <p>These bugs survive because they sit in the gap between what the code does and what the specification says. A gap that has historically required a human expert with the RFC open in one tab and the source code in the other, tracing cross-references by hand.</p>
+        <p>That gap is tractable now. Not fully automated. SpecTrace's findings still benefit from human interpretation of the RFC's intent. But tractable in a way it wasn't before.</p>
+        <p>The next frontier in AI security isn't just finding bugs faster.</p>
+        <p>It's checking whether the code was right in the first place.</p>
+
+        <p><em>SpecTrace is open source: <a href="https://github.com/awe-srush/spectrace" target="_blank" rel="noreferrer">github.com/awe-srush/spectrace</a></em></p>
+        <p><em>Built by <a href="https://www.linkedin.com/in/srushti-chaukhande" target="_blank" rel="noreferrer">Srushti Chaukhande</a> at the University of Washington.</em></p>
+      </div>
+    </article>
+  </main>
+  <script src="script.js"></script>
+  <script data-goatcounter="https://srushti.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
