@@ -438,6 +438,113 @@ main.stacked {
   box-shadow: 0 6px 12px var(--shadow);
 }
 
+/* ── Center-line work experience timeline ─────────────── */
+
+.exp-timeline {
+  position: relative;
+  padding: 12px 0 12px;
+}
+
+/* Gray center track line */
+.exp-timeline::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(27, 42, 42, 0.12);
+  transform: translateX(-50%);
+}
+
+/* Teal scrolling circle */
+.exp-cursor {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--teal-3);
+  box-shadow: 0 0 0 3px var(--cream-1), 0 0 0 5px var(--teal-3);
+  transform: translate(-50%, -50%);
+  transition: top 0.15s ease;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.exp-event {
+  display: grid;
+  grid-template-columns: 1fr 32px 1fr;
+  gap: 0 20px;
+  margin-bottom: 40px;
+  align-items: start;
+}
+
+/* Center dot on the line */
+.exp-dot {
+  grid-column: 2;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--teal-1);
+  border: 2px solid var(--cream-1);
+  box-shadow: 0 0 0 1px var(--teal-1);
+  margin-top: 8px;
+  justify-self: center;
+  z-index: 1;
+}
+
+/* Right side: card in column 3 */
+.exp-right .exp-card {
+  grid-column: 3;
+  grid-row: 1;
+}
+.exp-right .exp-dot {
+  grid-row: 1;
+}
+
+/* Left side: card in column 1 */
+.exp-left .exp-card {
+  grid-column: 1;
+  grid-row: 1;
+}
+.exp-left .exp-dot {
+  grid-row: 1;
+}
+
+.exp-card h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.exp-card ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.exp-card li {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 720px) {
+  .exp-timeline::before { left: 8px; transform: none; }
+  .exp-cursor { left: 8px; }
+  .exp-event {
+    grid-template-columns: 24px 1fr;
+    gap: 0 12px;
+  }
+  .exp-dot { grid-column: 1; }
+  .exp-right .exp-card,
+  .exp-left .exp-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .exp-left .exp-dot { grid-column: 1; }
+}
+
 .stack {
   display: grid;
   gap: 16px;
@@ -693,4 +800,210 @@ main.stacked {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+
+/* ── Blog index page ──────────────────────────────────── */
+
+.blog-index {
+  max-width: 720px;
+  margin: 60px auto 100px;
+  padding: 0 6vw;
+}
+
+.blog-index-header {
+  margin-bottom: 56px;
+}
+
+.blog-index-sub {
+  font-size: 17px;
+  color: rgba(27, 42, 42, 0.65);
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.blog-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-list-item {
+  display: block;
+  padding: 36px 0;
+  border-top: 1px solid rgba(27, 42, 42, 0.1);
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.blog-list-item:last-child {
+  border-bottom: 1px solid rgba(27, 42, 42, 0.1);
+}
+
+.blog-list-item:hover {
+  opacity: 0.75;
+}
+
+.blog-list-date {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(27, 42, 42, 0.45);
+  margin-bottom: 10px;
+}
+
+.blog-list-title {
+  font-family: "Playfair Display", serif;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.blog-list-desc {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: rgba(27, 42, 42, 0.7);
+  margin: 0 0 14px;
+}
+
+.blog-list-cta {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--teal-1);
+}
+
+/* ── Blog post layout ─────────────────────────────────── */
+
+.blog-page {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: 1320px;
+  margin: 48px auto 0;
+  padding: 0 3vw 100px;
+  gap: 0 56px;
+  align-items: start;
+}
+
+/* Sticky TOC */
+.toc-sidebar {
+  position: sticky;
+  top: 90px;
+  display: grid;
+  grid-template-columns: 2px 1fr;
+  gap: 0 18px;
+}
+
+/* Gray track column — stretches to nav height via CSS Grid */
+.toc-track {
+  position: relative;
+  background: rgba(27, 42, 42, 0.15);
+  border-radius: 2px;
+}
+
+/* Teal bar grows from top inside the track */
+.toc-progress {
+  position: absolute;
+  top: 0;
+  left: -0.5px;
+  width: 3px;
+  height: 0;
+  background: #3bb2b2;
+  border-radius: 2px;
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.toc-link {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: rgba(27, 42, 42, 0.5);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.toc-link:hover {
+  color: var(--ink);
+}
+
+.toc-link.active {
+  color: var(--teal-1);
+  font-weight: 500;
+}
+
+/* Blog article */
+.blog-header {
+  margin-bottom: 52px;
+}
+
+.blog-meta {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(27, 42, 42, 0.48);
+  margin: 0 0 14px;
+}
+
+.blog-title {
+  font-family: "Playfair Display", serif;
+  font-size: 40px;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+}
+
+.blog-body h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 21px;
+  font-weight: 600;
+  margin: 52px 0 18px;
+  color: var(--ink);
+  scroll-margin-top: 100px;
+}
+
+.blog-body p {
+  font-size: 16px;
+  line-height: 1.8;
+  margin: 0 0 18px;
+  color: var(--ink);
+}
+
+.blog-body ul {
+  padding-left: 22px;
+  margin: 0 0 18px;
+}
+
+.blog-body li {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.blog-body em {
+  font-style: italic;
+  color: rgba(27, 42, 42, 0.85);
+}
+
+.blog-body strong {
+  font-weight: 600;
+}
+
+@media (max-width: 820px) {
+  .blog-page {
+    grid-template-columns: 1fr;
+  }
+  .toc-sidebar {
+    display: none;
+  }
+  .blog-title {
+    font-size: 30px;
+  }
 }
