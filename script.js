@@ -50,6 +50,22 @@ projectCards.forEach((card) => {
 });
 
 
+// Work experience timeline cursor
+const expTimeline = document.querySelector('.exp-timeline');
+const expCursor   = document.querySelector('.exp-cursor');
+if (expTimeline && expCursor) {
+  function updateExpCursor() {
+    const rect   = expTimeline.getBoundingClientRect();
+    const height = expTimeline.offsetHeight;
+    const progress = Math.max(0, Math.min(1,
+      (window.innerHeight * 0.5 - rect.top) / height
+    ));
+    expCursor.style.top = (progress * height) + 'px';
+  }
+  window.addEventListener('scroll', updateExpCursor, { passive: true });
+  updateExpCursor();
+}
+
 const buildWord = document.querySelector('.build-word');
 if (buildWord) {
   const target = 'Blogs';

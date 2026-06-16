@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Grad Life | Srushti Chaukhande</title>
+  <title>Build Logs | Srushti Chaukhande</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -28,28 +28,32 @@
     </div>
   </div>
 
-  <main class="stacked">
-    <section class="diary">
-      <div class="diary-cover">
-        <h2 class="build-title" aria-label="Srushti's Build Logs">Srushti's <span class="build-word">Build Logs</span></h2>
-        <p>Anecdotes and reflections from my work life.</p>
-      </div>
+  <div class="blog-index">
+    <header class="blog-index-header">
+      <p class="blog-meta">Writing</p>
+      <h1 class="blog-title build-title" aria-label="Srushti's Build Logs">Srushti's <span class="build-word">Build Logs</span></h1>
+      <p class="blog-index-sub">Anecdotes and reflections from my work life.</p>
+    </header>
 
-      <a class="diary-entry diary-link" href="finding-bugs-that-dont-crash.html" target="_blank" rel="noreferrer">
-        <div class="entry-date">April 2026</div>
-        <h3>Build Log #02: Finding Bugs That Don't Crash</h3>
-        <p>What happens when code does everything right but says the wrong thing.</p>
-        <span class="entry-cta">Read the full entry →</span>
+    <div class="blog-list">
+
+      <a class="blog-list-item" href="finding-bugs-that-dont-crash.html">
+        <span class="blog-list-date">April 2026</span>
+        <h2 class="blog-list-title">Build Log #02: Finding Bugs That Don't Crash</h2>
+        <p class="blog-list-desc">What happens when code does everything right but says the wrong thing.</p>
+        <span class="blog-list-cta">Read the full entry →</span>
       </a>
 
-      <a class="diary-entry diary-link" href="the-case-of-the-vanishing-memory.html" target="_blank" rel="noreferrer">
-        <div class="entry-date">February 2026</div>
-        <h3>Build Log #01: The Case of the Vanishing Memory</h3>
-        <p>A memory leak that only showed itself after everyone else went to sleep.</p>
-        <span class="entry-cta">Read the full entry →</span>
+      <a class="blog-list-item" href="the-case-of-the-vanishing-memory.html">
+        <span class="blog-list-date">February 2026</span>
+        <h2 class="blog-list-title">Build Log #01: The Case of the Vanishing Memory</h2>
+        <p class="blog-list-desc">A memory leak that only showed itself after everyone else went to sleep.</p>
+        <span class="blog-list-cta">Read the full entry →</span>
       </a>
-    </section>
-  </main>
+
+    </div>
+  </div>
+
   <script src="script.js"></script>
   <script data-goatcounter="https://srushti.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
