@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Publish | Srushti Chaukhande</title>
+  <link rel="icon" type="image/svg+xml" href="assets/girl-icon.svg" />
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap");
+
+    :root {
+      --teal-1: #0b6e6e;
+      --teal-2: #0e8a8a;
+      --teal-3: #3bb2b2;
+      --cream-1: #f7f1e9;
+      --cream-2: #efe3d3;
+      --ink: #1b2a2a;
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: "Raleway", sans-serif; background: var(--cream-1); color: var(--ink); min-height: 100vh; }
+
+    /* ── Auth ─────────────────────────────── */
+    .auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 40px; }
+    .auth-screen h1 { font-family: "Playfair Display", serif; font-size: 28px; margin-bottom: 8px; }
+    .auth-screen p { color: rgba(27,42,42,0.55); margin-bottom: 24px; font-size: 15px; text-align: center; max-width: 400px; line-height: 1.6; }
+    .auth-screen input { width: 400px; max-width: 90vw; padding: 12px 16px; border: 1px solid rgba(27,42,42,0.15); border-radius: 8px; font-family: monospace; font-size: 14px; background: rgba(255,255,255,0.5); outline: none; }
+    .auth-screen input:focus { border-color: var(--teal-3); }
+    .auth-screen button { margin-top: 12px; padding: 10px 28px; background: var(--teal-1); color: var(--cream-1); border: none; border-radius: 8px; font-family: inherit; font-size: 15px; cursor: pointer; }
+    .auth-screen button:hover { background: var(--teal-2); }
+
+    /* ── Editor layout ───────────────────── */
+    .editor-screen { display: none; }
+    .editor-screen.visible { display: block; }
+    .editor-topbar { padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(27,42,42,0.1); background: rgba(255,255,255,0.4); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(8px); }
+    .editor-topbar-left { display: flex; align-items: center; gap: 16px; }
+    .editor-topbar h2 { font-family: "Playfair Display", serif; font-size: 18px; }
+    .btn { padding: 8px 20px; border-radius: 8px; border: none; font-family: inherit; font-size: 14px; cursor: pointer; transition: background 0.15s; }
+    .btn-primary { background: var(--teal-1); color: var(--cream-1); }
+    .btn-primary:hover { background: var(--teal-2); }
+    .btn-secondary { background: rgba(27,42,42,0.08); color: var(--ink); }
+    .btn-secondary:hover { background: rgba(27,42,42,0.14); }
+    .logout-btn { font-size: 13px; color: rgba(27,42,42,0.4); background: none; border: none; cursor: pointer; text-decoration: underline; }
+    .editor-main { max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    /* ── Meta fields ─────────────────────── */
+    .meta-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .meta-field { display: flex; flex-direction: column; gap: 6px; }
+    .meta-field.full { grid-column: 1 / -1; }
+    .meta-field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(27,42,42,0.5); }
+    .meta-field input, .meta-field select { padding: 10px 14px; border: 1px solid rgba(27,42,42,0.15); border-radius: 8px; font-family: inherit; font-size: 15px; background: rgba(255,255,255,0.5); outline: none; color: var(--ink); }
+    .meta-field input:focus, .meta-field select:focus { border-color: var(--teal-3); }
+    .title-input { font-family: "Playfair Display", serif !important; font-size: 28px !important; font-weight: 600; border: none !important; background: transparent !important; padding: 0 !important; }
+    .title-input::placeholder { color: rgba(27,42,42,0.25); }
+
+    /* ── Content editor ──────────────────── */
+    .editor-content {
+      min-height: 500px; padding: 8px 0; border: none; border-radius: 0;
+      background: transparent; outline: none; font-size: 17px; line-height: 1.85; color: var(--ink);
+    }
+    .editor-content h1 { font-family: "Playfair Display", serif; font-size: 28px; font-weight: 700; margin: 28px 0 10px; }
+    .editor-content h2 { font-family: "Playfair Display", serif; font-size: 22px; font-weight: 600; margin: 24px 0 10px; }
+    .editor-content h3 { font-family: "Playfair Display", serif; font-size: 18px; font-weight: 600; margin: 20px 0 8px; }
+    .editor-content p { margin-bottom: 14px; }
+    .editor-content ul, .editor-content ol { padding-left: 24px; margin-bottom: 14px; }
+    .editor-content li { margin-bottom: 4px; }
+    .editor-content a { color: var(--teal-1); text-decoration: underline; }
+    .editor-content code { font-size: 14px; background: rgba(14,110,110,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .editor-content pre { background: rgba(14,110,110,0.06); padding: 16px 20px; border-radius: 8px; margin: 16px 0; overflow-x: auto; font-family: monospace; font-size: 14px; line-height: 1.6; }
+    .editor-content blockquote { border-left: 3px solid var(--teal-3); margin: 16px 0; padding: 8px 20px; color: rgba(27,42,42,0.7); }
+    .editor-content hr { border: none; height: 1.5px; background: linear-gradient(90deg, transparent, var(--teal-3), transparent); margin: 28px 0; }
+    .editor-content table { width: 100%; border-collapse: collapse; margin: 16px 0; position: relative; }
+    .editor-content th, .editor-content td { border: 1px solid rgba(27,42,42,0.15); padding: 10px 14px; text-align: left; font-size: 15px; min-width: 60px; }
+    .editor-content th { background: rgba(14,110,110,0.06); font-weight: 600; }
+
+    /* ── Table controls ──────────────────── */
+    .table-controls {
+      position: absolute; z-index: 200; background: #fff; border: 1px solid rgba(27,42,42,0.12);
+      border-radius: 8px; box-shadow: 0 6px 20px rgba(14,20,20,0.1); padding: 4px 0;
+      min-width: 180px; display: none;
+    }
+    .table-controls.visible { display: block; }
+    .table-controls button {
+      display: block; width: 100%; text-align: left; padding: 8px 14px; border: none;
+      background: none; font-family: inherit; font-size: 13px; color: var(--ink); cursor: pointer;
+    }
+    .table-controls button:hover { background: rgba(14,110,110,0.08); }
+    .tc-sep { height: 1px; background: rgba(27,42,42,0.08); margin: 4px 0; }
+    .editor-content img { max-width: 100%; border-radius: 10px; margin: 16px 0; }
+
+    /* ── Slash menu ───────────────────────── */
+    .slash-menu {
+      position: absolute; z-index: 200; background: #fff; border: 1px solid rgba(27,42,42,0.12);
+      border-radius: 10px; box-shadow: 0 8px 30px rgba(14,20,20,0.12); padding: 6px 0;
+      min-width: 220px; display: none; max-height: 340px; overflow-y: auto;
+    }
+    .slash-menu.visible { display: block; }
+    .slash-item {
+      display: flex; align-items: center; gap: 12px; padding: 9px 16px; cursor: pointer;
+      font-size: 14px; color: var(--ink); transition: background 0.1s;
+    }
+    .slash-item:hover, .slash-item.active { background: rgba(14,110,110,0.08); }
+    .slash-icon { width: 22px; text-align: center; font-size: 13px; color: rgba(27,42,42,0.45); font-weight: 600; }
+
+    /* ── Floating toolbar ────────────────── */
+    .float-toolbar {
+      position: absolute; z-index: 200; display: none; align-items: center; gap: 2px;
+      background: var(--ink); border-radius: 8px; padding: 4px 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    .float-toolbar.visible { display: flex; }
+    .float-toolbar button {
+      background: none; border: none; color: rgba(255,255,255,0.8); cursor: pointer;
+      padding: 5px 8px; border-radius: 4px; font-size: 13px; font-family: inherit;
+      transition: color 0.1s, background 0.1s; min-width: 28px; text-align: center;
+    }
+    .float-toolbar button:hover { color: #fff; background: rgba(255,255,255,0.12); }
+    .float-toolbar button.on { color: var(--teal-3); }
+    .float-toolbar .ft-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 3px; }
+
+    /* ── Status ───────────────────────────── */
+    .status-bar { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 14px; display: none; }
+    .status-bar.visible { display: block; }
+    .status-bar.success { background: rgba(39,201,63,0.12); color: #1a7a2a; }
+    .status-bar.error { background: rgba(192,57,43,0.12); color: #c0392b; }
+    .status-bar.info { background: rgba(14,138,138,0.1); color: var(--teal-1); }
+
+    /* ── Hidden file input ────────────────── */
+    #imageUpload { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth -->
+  <div class="auth-screen" id="authScreen">
+    <h1>Publish</h1>
+    <p>Enter your GitHub Personal Access Token to start writing. The token is stored only in your browser and never sent anywhere except GitHub's API.</p>
+    <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    <button onclick="authenticate()">Continue</button>
+    <div class="status-bar" id="authStatus" style="margin-top:16px;max-width:400px;"></div>
+  </div>
+
+  <!-- Editor -->
+  <div class="editor-screen" id="editorScreen">
+    <div class="editor-topbar">
+      <div class="editor-topbar-left">
+        <h2>New Post</h2>
+        <button class="logout-btn" onclick="logout()">change token</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="previewPost()">Preview</button>
+        <button class="btn btn-primary" onclick="publishPost()">Publish</button>
+      </div>
+    </div>
+
+    <div class="editor-main">
+      <div class="meta-fields">
+        <div class="meta-field full">
+          <input class="title-input" type="text" id="postTitle" placeholder="Post title" />
+        </div>
+        <div class="meta-field">
+          <label>Description</label>
+          <input type="text" id="postDesc" placeholder="One-line summary for the card" />
+        </div>
+        <div class="meta-field">
+          <label>Category</label>
+          <select id="postCategory">
+            <option value="blog">Blog</option>
+            <option value="technical">Technical Posts</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+        <div class="meta-field">
+          <label>Date</label>
+          <input type="text" id="postDate" placeholder="September 2026" />
+        </div>
+        <div class="meta-field">
+          <label>Blog #</label>
+          <input type="text" id="postNumber" placeholder="03" />
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:rgba(27,42,42,0.4);margin-bottom:12px;">Type <b>/</b> for block commands &middot; Select text for formatting</p>
+
+      <div class="editor-content" id="editorContent" contenteditable="true">
+        <p><br></p>
+      </div>
+
+      <div class="status-bar" id="publishStatus"></div>
+    </div>
+  </div>
+
+  <!-- Slash menu -->
+  <div class="slash-menu" id="slashMenu">
+    <div class="slash-item" data-cmd="h1"><span class="slash-icon">H1</span> Heading 1</div>
+    <div class="slash-item" data-cmd="h2"><span class="slash-icon">H2</span> Heading 2</div>
+    <div class="slash-item" data-cmd="h3"><span class="slash-icon">H3</span> Heading 3</div>
+    <div class="slash-item" data-cmd="p"><span class="slash-icon">&para;</span> Paragraph</div>
+    <div class="slash-item" data-cmd="ul"><span class="slash-icon">&bull;</span> Bulleted List</div>
+    <div class="slash-item" data-cmd="ol"><span class="slash-icon">1.</span> Numbered List</div>
+    <div class="slash-item" data-cmd="blockquote"><span class="slash-icon">&ldquo;</span> Blockquote</div>
+    <div class="slash-item" data-cmd="code"><span class="slash-icon">&lt;&gt;</span> Code Block</div>
+    <div class="slash-item" data-cmd="hr"><span class="slash-icon">&mdash;</span> Divider</div>
+    <div class="slash-item" data-cmd="table"><span class="slash-icon">&#9638;</span> Table</div>
+    <div class="slash-item" data-cmd="image"><span class="slash-icon">&#9634;</span> Image</div>
+  </div>
+
+  <!-- Floating toolbar -->
+  <div class="float-toolbar" id="floatToolbar">
+    <button data-fmt="bold" title="Bold"><b>B</b></button>
+    <button data-fmt="italic" title="Italic"><i>I</i></button>
+    <button data-fmt="strikeThrough" title="Strikethrough"><s>S</s></button>
+    <div class="ft-sep"></div>
+    <button data-fmt="createLink" title="Link">&#128279;</button>
+    <button data-fmt="code" title="Inline Code">&lt;/&gt;</button>
+    <div class="ft-sep"></div>
+    <button data-block="h1" title="Heading 1">H1</button>
+    <button data-block="h2" title="Heading 2">H2</button>
+    <button data-block="h3" title="Heading 3">H3</button>
+    <button data-block="p" title="Paragraph">P</button>
+  </div>
+
+  <!-- Table controls -->
+  <div class="table-controls" id="tableControls">
+    <button onclick="tableAction('addRowAbove')">Insert row above</button>
+    <button onclick="tableAction('addRowBelow')">Insert row below</button>
+    <div class="tc-sep"></div>
+    <button onclick="tableAction('addColLeft')">Insert column left</button>
+    <button onclick="tableAction('addColRight')">Insert column right</button>
+    <div class="tc-sep"></div>
+    <button onclick="tableAction('deleteRow')">Delete row</button>
+    <button onclick="tableAction('deleteCol')">Delete column</button>
+    <div class="tc-sep"></div>
+    <button onclick="tableAction('deleteTable')" style="color:#c0392b;">Delete table</button>
+  </div>
+
+  <input type="file" id="imageUpload" accept="image/*" />
+
+  <script>
+    const OWNER = 'awe-srush';
+    const REPO = 'whoami';
+    const BRANCH = 'main';
+    const API = 'https://api.github.com';
+    const editor = document.getElementById('editorContent');
+    const slashMenu = document.getElementById('slashMenu');
+    const floatToolbar = document.getElementById('floatToolbar');
+
+    // ── Auth ──────────────────────────────────
+
+    function getToken() { return localStorage.getItem('gh_token'); }
+    function setToken(t) { localStorage.setItem('gh_token', t); }
+
+    async function authenticate() {
+      const token = document.getElementById('tokenInput').value.trim();
+      if (!token) return;
+      showStatus('authStatus', 'info', 'Verifying token...');
+      try {
+        const res = await ghFetch('/user', token);
+        if (!res.ok) throw new Error('Invalid token');
+        setToken(token);
+        showEditor();
+      } catch (e) {
+        showStatus('authStatus', 'error', 'Invalid token. Make sure it has Contents read/write permission.');
+      }
+    }
+
+    function logout() { localStorage.removeItem('gh_token'); location.reload(); }
+
+    function showEditor() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('editorScreen').classList.add('visible');
+      const now = new Date();
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('postDate').value = months[now.getMonth()] + ' ' + now.getFullYear();
+      editor.focus();
+      document.execCommand('defaultParagraphSeparator', false, 'p');
+    }
+
+    if (getToken()) showEditor();
+
+    // ── GitHub API ────────────────────────────
+
+    function ghFetch(path, token, opts = {}) {
+      token = token || getToken();
+      return fetch(API + path, {
+        ...opts,
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json', ...(opts.headers || {}) }
+      });
+    }
+
+    async function getFile(path) {
+      const res = await ghFetch(`/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`);
+      if (!res.ok) return null;
+      return res.json();
+    }
+
+    async function putFile(path, content, message, sha) {
+      const body = { message, content: btoa(unescape(encodeURIComponent(content))), branch: BRANCH };
+      if (sha) body.sha = sha;
+      const res = await ghFetch(`/repos/${OWNER}/${REPO}/contents/${path}`, null, { method: 'PUT', body: JSON.stringify(body) });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Failed to commit'); }
+      return res.json();
+    }
+
+    async function putBinaryFile(path, base64, message) {
+      const body = { message, content: base64, branch: BRANCH };
+      const res = await ghFetch(`/repos/${OWNER}/${REPO}/contents/${path}`, null, { method: 'PUT', body: JSON.stringify(body) });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message || 'Failed to upload'); }
+      return res.json();
+    }
+
+    // ── Slash menu ────────────────────────────
+
+    let slashActive = false;
+    let slashFilter = '';
+    let slashRange = null;
+    let slashIndex = 0;
+    const allItems = [...slashMenu.querySelectorAll('.slash-item')];
+
+    editor.addEventListener('input', () => {
+      if (slashActive) {
+        // Update filter from text after "/"
+        const sel = window.getSelection();
+        if (sel.rangeCount) {
+          const node = sel.anchorNode;
+          if (node && node.nodeType === 3) {
+            const text = node.textContent;
+            const slashPos = text.lastIndexOf('/');
+            if (slashPos !== -1) {
+              slashFilter = text.substring(slashPos + 1).toLowerCase();
+              filterSlashMenu();
+              return;
+            }
+          }
+        }
+        closeSlash();
+      }
+    });
+
+    editor.addEventListener('keydown', (e) => {
+      if (slashActive) {
+        const visible = allItems.filter(i => i.style.display !== 'none');
+        if (e.key === 'ArrowDown') { e.preventDefault(); slashIndex = Math.min(slashIndex + 1, visible.length - 1); highlightSlash(visible); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); slashIndex = Math.max(slashIndex - 1, 0); highlightSlash(visible); }
+        else if (e.key === 'Enter') { e.preventDefault(); if (visible[slashIndex]) executeSlash(visible[slashIndex].dataset.cmd); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeSlash(); }
+        return;
+      }
+
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey) {
+        // Check if we're at start of empty block or after newline
+        const sel = window.getSelection();
+        if (sel.rangeCount) {
+          const node = sel.anchorNode;
+          const offset = sel.anchorOffset;
+          const text = node && node.nodeType === 3 ? node.textContent : '';
+          // Only trigger at empty or start of line
+          if (text.trim() === '' || offset === 0) {
+            setTimeout(() => openSlash(), 10);
+          }
+        }
+      }
+    });
+
+    function openSlash() {
+      slashActive = true;
+      slashFilter = '';
+      slashIndex = 0;
+      const sel = window.getSelection();
+      if (sel.rangeCount) slashRange = sel.getRangeAt(0).cloneRange();
+      filterSlashMenu();
+      positionSlashMenu();
+      slashMenu.classList.add('visible');
+    }
+
+    function closeSlash() {
+      slashActive = false;
+      slashFilter = '';
+      slashMenu.classList.remove('visible');
+    }
+
+    function filterSlashMenu() {
+      let visibleCount = 0;
+      allItems.forEach(item => {
+        const match = item.textContent.toLowerCase().includes(slashFilter);
+        item.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+      if (visibleCount === 0) closeSlash();
+      slashIndex = 0;
+      highlightSlash(allItems.filter(i => i.style.display !== 'none'));
+    }
+
+    function highlightSlash(visible) {
+      allItems.forEach(i => i.classList.remove('active'));
+      if (visible[slashIndex]) visible[slashIndex].classList.add('active');
+    }
+
+    function positionSlashMenu() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      slashMenu.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+      slashMenu.style.left = (rect.left + window.scrollX) + 'px';
+    }
+
+    // Click on slash menu item
+    slashMenu.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const item = e.target.closest('.slash-item');
+      if (item) executeSlash(item.dataset.cmd);
+    });
+
+    function removeSlashText() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const node = sel.anchorNode;
+      if (node && node.nodeType === 3) {
+        const pos = node.textContent.lastIndexOf('/');
+        if (pos !== -1) {
+          node.textContent = node.textContent.substring(0, pos) + node.textContent.substring(sel.anchorOffset);
+          // Place caret
+          const range = document.createRange();
+          range.setStart(node, pos);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+      }
+    }
+
+    function executeSlash(cmd) {
+      closeSlash();
+      removeSlashText();
+
+      switch (cmd) {
+        case 'h1': document.execCommand('formatBlock', false, '<h1>'); break;
+        case 'h2': document.execCommand('formatBlock', false, '<h2>'); break;
+        case 'h3': document.execCommand('formatBlock', false, '<h3>'); break;
+        case 'p': document.execCommand('formatBlock', false, '<p>'); break;
+        case 'blockquote': document.execCommand('formatBlock', false, '<blockquote>'); break;
+        case 'ul': document.execCommand('insertUnorderedList'); break;
+        case 'ol': document.execCommand('insertOrderedList'); break;
+        case 'hr': insertDivider(); break;
+        case 'code': insertCodeBlock(); break;
+        case 'table': insertTable(); break;
+        case 'image': triggerImageUpload(); break;
+      }
+      editor.focus();
+    }
+
+    function insertDivider() {
+      const hr = document.createElement('hr');
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const block = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        block.after(p);
+        block.after(hr);
+        placeCaret(p);
+      }
+    }
+
+    function insertCodeBlock() {
+      const pre = document.createElement('pre');
+      pre.textContent = 'code here';
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const block = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        block.after(p);
+        block.after(pre);
+        // Select text inside pre
+        const r2 = document.createRange();
+        r2.selectNodeContents(pre);
+        sel.removeAllRanges();
+        sel.addRange(r2);
+      }
+    }
+
+    function insertTable() {
+      const rows = parseInt(prompt('Number of rows (including header):', '3')) || 3;
+      const cols = parseInt(prompt('Number of columns:', '3')) || 3;
+
+      const table = document.createElement('table');
+      for (let r = 0; r < rows; r++) {
+        const tr = document.createElement('tr');
+        for (let c = 0; c < cols; c++) {
+          const cell = document.createElement(r === 0 ? 'th' : 'td');
+          cell.textContent = r === 0 ? 'Header ' + (c + 1) : '\u00A0';
+          tr.appendChild(cell);
+        }
+        table.appendChild(tr);
+      }
+
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const block = range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer;
+        block.after(p);
+        block.after(table);
+        placeCaret(p);
+      }
+    }
+
+    // ── Table context menu ────────────────────
+
+    const tableControls = document.getElementById('tableControls');
+    let activeCell = null;
+
+    editor.addEventListener('contextmenu', (e) => {
+      const cell = e.target.closest('td, th');
+      if (cell && editor.contains(cell)) {
+        e.preventDefault();
+        activeCell = cell;
+        tableControls.style.top = (e.pageY + 4) + 'px';
+        tableControls.style.left = (e.pageX + 4) + 'px';
+        tableControls.classList.add('visible');
+      }
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      if (!tableControls.contains(e.target)) tableControls.classList.remove('visible');
+    });
+
+    function tableAction(action) {
+      tableControls.classList.remove('visible');
+      if (!activeCell) return;
+      const table = activeCell.closest('table');
+      const row = activeCell.closest('tr');
+      if (!table || !row) return;
+
+      const rowIndex = [...table.rows].indexOf(row);
+      const colIndex = [...row.cells].indexOf(activeCell);
+      const colCount = row.cells.length;
+
+      switch (action) {
+        case 'addRowAbove': {
+          const tr = document.createElement('tr');
+          for (let i = 0; i < colCount; i++) { const td = document.createElement('td'); td.innerHTML = '&nbsp;'; tr.appendChild(td); }
+          row.before(tr);
+          break;
+        }
+        case 'addRowBelow': {
+          const tr = document.createElement('tr');
+          for (let i = 0; i < colCount; i++) { const td = document.createElement('td'); td.innerHTML = '&nbsp;'; tr.appendChild(td); }
+          row.after(tr);
+          break;
+        }
+        case 'addColLeft':
+          [...table.rows].forEach((r, i) => {
+            const cell = document.createElement(i === 0 ? 'th' : 'td');
+            cell.innerHTML = i === 0 ? 'Header' : '&nbsp;';
+            r.cells[colIndex] ? r.cells[colIndex].before(cell) : r.appendChild(cell);
+          });
+          break;
+        case 'addColRight':
+          [...table.rows].forEach((r, i) => {
+            const cell = document.createElement(i === 0 ? 'th' : 'td');
+            cell.innerHTML = i === 0 ? 'Header' : '&nbsp;';
+            r.cells[colIndex] ? r.cells[colIndex].after(cell) : r.appendChild(cell);
+          });
+          break;
+        case 'deleteRow':
+          if (table.rows.length > 1) row.remove();
+          else table.remove();
+          break;
+        case 'deleteCol':
+          if (colCount > 1) [...table.rows].forEach(r => { if (r.cells[colIndex]) r.cells[colIndex].remove(); });
+          else table.remove();
+          break;
+        case 'deleteTable':
+          table.remove();
+          break;
+      }
+      activeCell = null;
+    }
+
+    function placeCaret(el) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(true);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    // ── Image upload ──────────────────────────
+
+    function triggerImageUpload() {
+      document.getElementById('imageUpload').click();
+    }
+
+    document.getElementById('imageUpload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Full = reader.result;
+        const base64Data = base64Full.split(',')[1];
+        const ext = file.name.split('.').pop().toLowerCase();
+        const filename = 'img-' + Date.now() + '.' + ext;
+        const path = 'assets/' + filename;
+
+        try {
+          showStatus('publishStatus', 'info', 'Uploading image...');
+          await putBinaryFile(path, base64Data, `Upload image: ${filename}`);
+
+          // Insert img tag
+          const img = document.createElement('img');
+          img.src = path;
+          img.alt = file.name;
+          const p = document.createElement('p');
+          p.innerHTML = '<br>';
+          const sel = window.getSelection();
+          if (sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            range.insertNode(p);
+            range.insertNode(img);
+          } else {
+            editor.appendChild(img);
+            editor.appendChild(p);
+          }
+          showStatus('publishStatus', 'success', 'Image uploaded.');
+          setTimeout(() => { document.getElementById('publishStatus').classList.remove('visible'); }, 2000);
+        } catch (err) {
+          showStatus('publishStatus', 'error', 'Image upload failed: ' + err.message);
+        }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+
+    // ── Floating toolbar ──────────────────────
+
+    let floatVisible = false;
+
+    document.addEventListener('mouseup', () => setTimeout(updateFloatToolbar, 10));
+    document.addEventListener('keyup', (e) => {
+      if (e.shiftKey || e.key === 'Shift') setTimeout(updateFloatToolbar, 10);
+    });
+    document.addEventListener('mousedown', (e) => {
+      if (!floatToolbar.contains(e.target)) hideFloat();
+    });
+
+    function updateFloatToolbar() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount || sel.isCollapsed) { hideFloat(); return; }
+      // Only show if selection is inside editor
+      const anchor = sel.anchorNode;
+      if (!editor.contains(anchor)) { hideFloat(); return; }
+
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0) { hideFloat(); return; }
+
+      floatToolbar.style.top = (rect.top + window.scrollY - 44) + 'px';
+      floatToolbar.style.left = (rect.left + window.scrollX + rect.width / 2 - floatToolbar.offsetWidth / 2) + 'px';
+      floatToolbar.classList.add('visible');
+      floatVisible = true;
+
+      // Update active states
+      floatToolbar.querySelectorAll('button[data-fmt]').forEach(btn => {
+        const cmd = btn.dataset.fmt;
+        if (cmd === 'code' || cmd === 'createLink') return;
+        btn.classList.toggle('on', document.queryCommandState(cmd));
+      });
+    }
+
+    function hideFloat() {
+      floatToolbar.classList.remove('visible');
+      floatVisible = false;
+    }
+
+    floatToolbar.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // Keep selection
+      const btn = e.target.closest('button');
+      if (!btn) return;
+
+      if (btn.dataset.fmt) {
+        if (btn.dataset.fmt === 'createLink') {
+          const url = prompt('Enter URL:');
+          if (url) document.execCommand('createLink', false, url);
+        } else if (btn.dataset.fmt === 'code') {
+          const sel = window.getSelection();
+          if (sel.rangeCount) {
+            const range = sel.getRangeAt(0);
+            const code = document.createElement('code');
+            range.surroundContents(code);
+          }
+        } else {
+          document.execCommand(btn.dataset.fmt, false, null);
+        }
+      }
+
+      if (btn.dataset.block) {
+        document.execCommand('formatBlock', false, '<' + btn.dataset.block + '>');
+      }
+
+      setTimeout(updateFloatToolbar, 10);
+    });
+
+    // ── Close slash menu on outside click ─────
+
+    document.addEventListener('mousedown', (e) => {
+      if (slashActive && !slashMenu.contains(e.target)) closeSlash();
+    });
+
+    // ── Slug helper ───────────────────────────
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
+    }
+
+    // ── Build post HTML ───────────────────────
+
+    const TAGS = { blog: 'blog', technical: 'technical', both: 'blog · technical' };
+
+    function buildPostHTML(title, date, number, bodyHTML, desc, category) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = bodyHTML;
+
+      const headings = tmp.querySelectorAll('h2');
+      const tocLinks = [];
+      headings.forEach((h, i) => {
+        const id = slugify(h.textContent) || 'section-' + i;
+        h.setAttribute('id', id);
+        tocLinks.push({ id, text: h.textContent });
+      });
+
+      tmp.querySelectorAll('a').forEach(a => { a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noreferrer'); });
+
+      const bodyClean = tmp.innerHTML;
+      const tocHTML = tocLinks.map(t => `          <a class="toc-link" href="#${t.id}" data-section="${t.id}"><span class="toc-text">${t.text}</span></a>`).join('\n');
+      const tag = TAGS[category] || category || 'blog';
+
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} | Srushti Chaukhande</title>
+  <meta name="description" content="${desc}" />
+  <link rel="icon" type="image/svg+xml" href="assets/girl-icon.svg" />
+  <script src="theme.js"><\/script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cedarville+Cursive&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=9" />
+</head>
+<body class="theme-notebook">
+  <a class="skip" href="#main">Skip to content</a>
+  <canvas id="leaves" aria-hidden="true"></canvas>
+  <div class="notebook-holes" aria-hidden="true"></div>
+  <div class="notebook-margin" aria-hidden="true"></div>
+
+  <header class="site-nav">
+    <a class="brand" href="index.html" aria-label="Home"><img src="assets/girl-icon.svg" alt=""><span class="brand-name">Srushti Chaukhande</span></a>
+    <nav aria-label="Site">
+      <a href="index.html">About</a>
+      <a href="technical-posts.html">Technical<span class="nav-long"> Posts</span></a>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg></button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="post-layout" data-column>
+      <aside class="toc" aria-label="Contents">
+        <nav class="toc-nav">
+          <a class="toc-link toc-head" href="#post-top"><span class="toc-text">${title}</span><span class="toc-time"></span></a>
+${tocHTML}
+          <a class="toc-link toc-comments" href="#comments"><span class="toc-text">&darr; Comments</span></a>
+        </nav>
+      </aside>
+
+      <article class="post">
+        <header id="post-top">
+          <p class="post-meta"><span class="tag">${tag}</span><span>${date}</span>${number ? `<span class="num">Blog #${Number(number)}</span>` : ''}</p>
+          <h1 class="post-title">${title}</h1>
+          ${desc ? `<p class="post-dek">${desc}</p>` : ''}
+        </header>
+
+        <div class="prose">
+          ${bodyClean}
+        </div>
+
+        <section class="comments-section" id="comments">
+          <h2 class="comments-heading">Comments</h2>
+          <p class="comments-note">Sign in with GitHub to leave a comment or reaction.</p>
+          <div class="giscus"></div>
+        </section>
+
+        <div class="post-end">
+          <a class="btn" href="blog.html">&larr; All writing</a>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <nav class="footer-links" aria-label="Elsewhere">
+      <a href="mailto:srushti.decoder@gmail.com">Email</a>
+      <a href="https://github.com/awe-srush" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/srushti-chaukhande" target="_blank" rel="noreferrer">LinkedIn</a>
+      <a href="https://x.com/srushsays" target="_blank" rel="noreferrer">X</a>
+    </nav>
+    <p><img src="assets/girl-icon.svg" alt="">&copy; 2026 Srushti Chaukhande</p>
+  </footer>
+
+  <script src="comments.js"><\/script>
+  <script src="post.js"><\/script>
+  <script src="leaves.js"><\/script>
+  <script data-goatcounter="https://srushti.goatcounter.com/count" async src="//gc.zgo.at/count.js"><\/script>
+</body>
+</html>`;
+    }
+
+    // ── Build card / Insert ───────────────────
+
+    // Cards are static markup in blog.html / technical-posts.html (newest first).
+    // An empty .card-cover gets a drawn cover from writing.js, seeded by the slug.
+    function buildCardHTML(slug, title, desc, date, number, category) {
+      const n = Number(number) || '';
+      return `\n      <li><a class="card" href="${slug}.html">
+        <div class="card-cover" data-seed="${slug}" data-n="${n}"></div>
+        <div class="card-body">
+          <p class="card-num">Blog #${n}</p>
+          <h2 class="card-title">${title}</h2>
+          <p class="card-desc">${desc}</p>
+          <p class="card-meta"><span>${date}</span><span class="tag">${TAGS[category] || category}</span></p>
+        </div>
+      </a></li>`;
+    }
+
+    function insertCard(pageHTML, cardHTML) {
+      return pageHTML.replace(/(<ul class="cards" id="cards"[^>]*>)/, '$1' + cardHTML);
+    }
+
+    // ── Preview ───────────────────────────────
+
+    function previewPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const date = document.getElementById('postDate').value.trim();
+      const number = document.getElementById('postNumber').value.trim();
+      const body = editor.innerHTML;
+      if (!title) { alert('Enter a title first'); return; }
+
+      const desc = document.getElementById('postDesc').value.trim();
+      const category = document.getElementById('postCategory').value;
+      const html = buildPostHTML(title, date, number, body, desc, category);
+      const base = location.href.replace(/[^/]*$/, '');
+      const win = window.open('', '_blank');
+      win.document.write(`<base href="${base}">`);
+      win.document.write(html);
+      win.document.close();
+    }
+
+    // ── Publish ───────────────────────────────
+
+    async function publishPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const desc = document.getElementById('postDesc').value.trim();
+      const category = document.getElementById('postCategory').value;
+      const date = document.getElementById('postDate').value.trim();
+      const number = document.getElementById('postNumber').value.trim();
+      const body = editor.innerHTML;
+
+      if (!title || !desc || !date) { showStatus('publishStatus', 'error', 'Fill in title, description, and date.'); return; }
+
+      const slug = slugify(title);
+      const filename = slug + '.html';
+      showStatus('publishStatus', 'info', 'Publishing...');
+
+      try {
+        const postHTML = buildPostHTML(title, date, number, body, desc, category);
+        await putFile(filename, postHTML, `Add post: ${title}`);
+
+        const cardHTML = buildCardHTML(slug, title, desc, date, number, category);
+        const targets = [];
+        if (category === 'blog' || category === 'both') targets.push('blog.html');
+        if (category === 'technical' || category === 'both') targets.push('technical-posts.html');
+
+        for (const target of targets) {
+          const file = await getFile(target);
+          if (!file) throw new Error('Could not fetch ' + target);
+          const currentContent = decodeURIComponent(escape(atob(file.content)));
+          const updatedContent = insertCard(currentContent, cardHTML);
+          await putFile(target, updatedContent, `Add "${title}" to ${target}`, file.sha);
+        }
+
+        showStatus('publishStatus', 'success',
+          `Published! <a href="https://${OWNER}.github.io/${REPO}/${filename}" target="_blank" style="color:inherit;font-weight:600;">View post</a> (may take a minute for GitHub Pages to deploy)`);
+      } catch (e) {
+        showStatus('publishStatus', 'error', 'Error: ' + e.message);
+      }
+    }
+
+    function showStatus(id, type, msg) {
+      const el = document.getElementById(id);
+      el.className = 'status-bar visible ' + type;
+      el.innerHTML = msg;
+    }
+  </script>
+</body>
+</html>

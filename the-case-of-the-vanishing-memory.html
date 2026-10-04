@@ -4,177 +4,178 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Case of the Vanishing Memory | Srushti Chaukhande</title>
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="description" content="A memory leak that only showed itself after everyone else went to sleep." />
+  <link rel="icon" type="image/svg+xml" href="assets/girl-icon.svg" />
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cedarville+Cursive&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
-<body>
-  <div class="bg">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="grid"></div>
-  </div>
+<body class="theme-notebook">
+  <a class="skip" href="#main">Skip to content</a>
+  <canvas id="leaves" aria-hidden="true"></canvas>
+  <div class="notebook-holes" aria-hidden="true"></div>
+  <div class="notebook-margin" aria-hidden="true"></div>
 
-  <div class="topbar">
-    <div class="topbar-inner">
-      <div class="nav-group">
-        <a class="tab" href="index.html#top">Home</a>
-        <a class="tab active" href="build-logs.html">Srushti's Build Logs</a>
-      </div>
-      <div class="nav-group">
-        <a class="tab ghost" href="index.html#experience">Experience</a>
-        <a class="tab ghost" href="index.html#projects">Projects</a>
-        <a class="tab ghost" href="index.html#skills">Skills</a>
-      </div>
+  <header class="site-nav">
+    <a class="brand" href="index.html" aria-label="Home"><img src="assets/girl-icon.svg" alt=""><span class="brand-name">Srushti Chaukhande</span></a>
+    <nav aria-label="Site">
+      <a href="index.html">About</a>
+      <a href="technical-posts.html">Technical<span class="nav-long"> Posts</span></a>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg></button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="post-layout" data-column>
+      <aside class="toc" aria-label="Contents">
+        <nav class="toc-nav">
+          <a class="toc-link toc-head" href="#post-top"><span class="toc-text">The Case of the Vanishing Memory</span><span class="toc-time"></span></a>
+          <a class="toc-link" href="#crime-scene" data-section="crime-scene"><span class="toc-text">The crime scene</span></a>
+          <a class="toc-link" href="#obvious-path" data-section="obvious-path"><span class="toc-text">Resisting the obvious path</span></a>
+          <a class="toc-link" href="#memory-misbehave" data-section="memory-misbehave"><span class="toc-text">Watching memory misbehave</span></a>
+          <a class="toc-link" href="#anomaly" data-section="anomaly"><span class="toc-text">The anomaly</span></a>
+          <a class="toc-link" href="#thread" data-section="thread"><span class="toc-text">Pulling on the thread</span></a>
+          <a class="toc-link" href="#root-cause" data-section="root-cause"><span class="toc-text">The root cause</span></a>
+          <a class="toc-link" href="#resolution" data-section="resolution"><span class="toc-text">Resolution and impact</span></a>
+          <a class="toc-link" href="#leadership" data-section="leadership"><span class="toc-text">A note on leadership</span></a>
+          <a class="toc-link" href="#closing" data-section="closing"><span class="toc-text">Closing the case</span></a>
+          <a class="toc-link toc-comments" href="#comments"><span class="toc-text">&darr; Comments</span></a>
+        </nav>
+      </aside>
+
+      <article class="post">
+        <header id="post-top">
+          <p class="post-meta"><span class="tag">blog · technical</span><span>February 2026</span><span class="num">Blog #1</span></p>
+          <h1 class="post-title">The Case of the Vanishing Memory</h1>
+          <p class="post-dek">A memory leak that only showed itself after everyone else went to sleep.</p>
+        </header>
+
+        <div class="prose">
+          <p>Some failures don't announce themselves.</p>
+          <p>No crash.<br>No error logs.<br>No clean line between cause and effect.</p>
+          <p>Just a system that slowly, quietly forgets how to breathe.</p>
+          <p>This was one of those failures.</p>
+
+          <h2 id="crime-scene">The crime scene</h2>
+          <p>I had recently stepped into the role of Technical Lead for Performance Engineering, and we were running a large-scale load test simulating 20,000 concurrent users. In practice, that means thousands of requests hitting the system simultaneously — the kind of pressure that reveals behaviors you will never see in functional testing.</p>
+          <p>At first glance, everything looked stable.</p>
+          <p>Then memory usage began to climb.</p>
+          <p>Slowly. Consistently. Without ever returning to baseline.</p>
+          <p>Eventually, the inevitable happened: every application process froze.</p>
+          <p>The only clue left behind was frustratingly vague:</p>
+          <p><em>The leak appears to originate in the Informix database.</em></p>
+          <p>No stack trace. No obvious regression. Just a growing suspicion that something fundamental wasn't being cleaned up.</p>
+
+          <h2 id="obvious-path">Resisting the obvious path</h2>
+          <p>Informix, a relational database used heavily in enterprise and telecom systems, manages memory through internal segments and pools — structured regions where memory is allocated and later freed.</p>
+          <p>The initial suggestion was to comb through thousands of SQL queries and identify the problematic ones.</p>
+          <p>That approach would have been exhaustive, time-consuming, and — more importantly — speculative.</p>
+          <p>Instead of starting at the query layer, I chose to step back and ask a different question:</p>
+          <p><em>What if the queries are innocent, and the failure lives deeper — in how memory itself is managed?</em></p>
+          <p>That decision shaped everything that followed.</p>
+
+          <h2 id="memory-misbehave">Watching memory misbehave</h2>
+          <p>I began by revisiting Informix's internal memory architecture — not the parts most application developers touch, but the mechanisms that quietly keep long-running systems alive.</p>
+          <p>Using Informix documentation as a guide, I wrote a custom analysis script to:</p>
+          <ul>
+            <li>inspect memory pools over time,</li>
+            <li>measure allocation and deallocation rates,</li>
+            <li>and surface pools whose behavior deviated from normal expectations.</li>
+          </ul>
+          <p>This reframed the problem.</p>
+          <p>Instead of guessing which queries were bad, I could now observe where memory was accumulating.</p>
+          <p>One pool stood out.</p>
+          <p>Its name: <em>ritem</em>.</p>
+
+          <h2 id="anomaly">The anomaly</h2>
+          <p>The numbers were immediately suspicious.</p>
+          <ul>
+            <li>~6.1 million allocations</li>
+            <li>~6 million originating from the exact same memory location</li>
+          </ul>
+          <p>Healthy systems don't behave like that.</p>
+          <p>I pulled memory dumps from the affected locations and started comparing them — buffer by buffer — looking for common structure.</p>
+          <p>That's when a pattern emerged.</p>
+          <p>Each stuck buffer contained two long VARCHAR strings — variable-length text fields used by the database. Once these buffers were allocated, they were never reclaimed.</p>
+          <p>The leak wasn't noisy. It was persistent.</p>
+          <p>And persistence is often more dangerous than failure.</p>
+
+          <h2 id="thread">Pulling on the thread</h2>
+          <p>To trace those VARCHARs back to their source, I unloaded and inspected the application's major tables, mapping:</p>
+          <ul>
+            <li>where long VARCHARs were used,</li>
+            <li>how those tables were keyed,</li>
+            <li>and what structural patterns they shared.</li>
+          </ul>
+          <p>This was slow work. Methodical work. The kind that doesn't reward shortcuts.</p>
+          <p>Eventually, the commonality became clear:</p>
+          <p>Every affected table used a composite primary key composed of two VARCHAR columns.</p>
+          <p>For context: a primary key uniquely identifies a row in a table. A composite key does this using multiple columns. Using VARCHARs in such keys is valid — but it turns out to be a sharp edge.</p>
+
+          <h2 id="root-cause">The root cause</h2>
+          <p>With this evidence, the IBM Informix engineering team was able to pinpoint the issue:</p>
+          <p>An internal cleaner thread responsible for reclaiming memory failed to delete rows from tables whose composite primary keys consisted of VARCHAR columns. This resulted in a silent memory leak within Informix's internal data structures.</p>
+          <p>Not in application code. Not in SQL logic. But inside the database engine itself.</p>
+          <p>The kind of issue that survives precisely because it sits below the layers most teams observe.</p>
+
+          <h2 id="resolution">Resolution and impact</h2>
+          <p>Once addressed:</p>
+          <ul>
+            <li>overall memory utilization improved by ~10%,</li>
+            <li>the system remained stable under sustained 20K-user load,</li>
+            <li>and the issue did not recur.</li>
+          </ul>
+          <p>I was recognized by the Director of Engineering at Cisco for owning the problem end-to-end — not just identifying the issue, but coordinating across internal teams and external vendors to drive it to resolution.</p>
+
+          <h2 id="leadership">A note on leadership</h2>
+          <p>This investigation later became part of my leadership essay for MIT's System Design &amp; Management (SDM) program, and ultimately led to an interview.</p>
+          <p>Not because it was a clever bug fix.</p>
+          <p>But because it reflected something deeper about how I approach systems.</p>
+
+          <h2 id="closing">Closing the case</h2>
+          <p>Over time, I've learned that the most consequential failures in large systems rarely come from a single bad line of code.</p>
+          <p>They emerge from:</p>
+          <ul>
+            <li>assumptions that no longer hold,</li>
+            <li>edge cases that quietly compound,</li>
+            <li>and abstractions that leak just enough to matter.</li>
+          </ul>
+          <p>Senior systems work isn't about reacting quickly to loud failures. It's about staying attentive to the quiet ones.</p>
+          <p>It's about knowing when to zoom in — and when to step back and question the frame itself.</p>
+          <p>This wasn't just a memory leak.</p>
+          <p>It was a reminder that long-running systems demand long attention spans — and that real ownership means following the problem to whatever layer it chooses to hide.</p>
+          <p><strong>Case closed.</strong></p>
+      
+        </div>
+
+        <section class="comments-section" id="comments">
+          <h2 class="comments-heading">Comments</h2>
+          <p class="comments-note">Sign in with GitHub to leave a comment or reaction.</p>
+          <div class="giscus"></div>
+        </section>
+
+        <div class="post-end">
+          <a class="btn" href="blog.html">&larr; All writing</a>
+        </div>
+      </article>
     </div>
-  </div>
+  </main>
 
-  <div class="blog-page">
-    <aside class="toc-sidebar">
-      <div class="toc-track">
-        <div class="toc-progress"></div>
-      </div>
-      <nav class="toc-nav" aria-label="Table of contents">
-        <a class="toc-link" href="#crime-scene">The crime scene</a>
-        <a class="toc-link" href="#obvious-path">Resisting the obvious path</a>
-        <a class="toc-link" href="#memory-misbehave">Watching memory misbehave</a>
-        <a class="toc-link" href="#anomaly">The anomaly</a>
-        <a class="toc-link" href="#thread">Pulling on the thread</a>
-        <a class="toc-link" href="#root-cause">The root cause</a>
-        <a class="toc-link" href="#resolution">Resolution and impact</a>
-        <a class="toc-link" href="#leadership">A note on leadership</a>
-        <a class="toc-link" href="#closing">Closing the case</a>
-      </nav>
-    </aside>
+  <footer class="site-footer" id="contact">
+    <nav class="footer-links" aria-label="Elsewhere">
+      <a href="mailto:srushti.decoder@gmail.com">Email</a>
+      <a href="https://github.com/awe-srush" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/srushti-chaukhande" target="_blank" rel="noreferrer">LinkedIn</a>
+      <a href="https://x.com/srushsays" target="_blank" rel="noreferrer">X</a>
+    </nav>
+    <p><img src="assets/girl-icon.svg" alt="">&copy; 2026 Srushti Chaukhande</p>
+  </footer>
 
-    <article class="blog-article">
-      <header class="blog-header">
-        <p class="blog-meta">February 2026 &middot; Build Log #01</p>
-        <h1 class="blog-title">The Case of the Vanishing Memory</h1>
-      </header>
-
-      <div class="blog-body">
-        <p>Some failures don't announce themselves.</p>
-        <p>No crash.<br>No error logs.<br>No clean line between cause and effect.</p>
-        <p>Just a system that slowly, quietly forgets how to breathe.</p>
-        <p>This was one of those failures.</p>
-
-        <h2 id="crime-scene">The crime scene</h2>
-        <p>I had recently stepped into the role of Technical Lead for Performance Engineering, and we were running a large-scale load test simulating 20,000 concurrent users. In practice, that means thousands of requests hitting the system simultaneously — the kind of pressure that reveals behaviors you will never see in functional testing.</p>
-        <p>At first glance, everything looked stable.</p>
-        <p>Then memory usage began to climb.</p>
-        <p>Slowly. Consistently. Without ever returning to baseline.</p>
-        <p>Eventually, the inevitable happened: every application process froze.</p>
-        <p>The only clue left behind was frustratingly vague:</p>
-        <p><em>The leak appears to originate in the Informix database.</em></p>
-        <p>No stack trace. No obvious regression. Just a growing suspicion that something fundamental wasn't being cleaned up.</p>
-
-        <h2 id="obvious-path">Resisting the obvious path</h2>
-        <p>Informix, a relational database used heavily in enterprise and telecom systems, manages memory through internal segments and pools — structured regions where memory is allocated and later freed.</p>
-        <p>The initial suggestion was to comb through thousands of SQL queries and identify the problematic ones.</p>
-        <p>That approach would have been exhaustive, time-consuming, and — more importantly — speculative.</p>
-        <p>Instead of starting at the query layer, I chose to step back and ask a different question:</p>
-        <p><em>What if the queries are innocent, and the failure lives deeper — in how memory itself is managed?</em></p>
-        <p>That decision shaped everything that followed.</p>
-
-        <h2 id="memory-misbehave">Watching memory misbehave</h2>
-        <p>I began by revisiting Informix's internal memory architecture — not the parts most application developers touch, but the mechanisms that quietly keep long-running systems alive.</p>
-        <p>Using Informix documentation as a guide, I wrote a custom analysis script to:</p>
-        <ul>
-          <li>inspect memory pools over time,</li>
-          <li>measure allocation and deallocation rates,</li>
-          <li>and surface pools whose behavior deviated from normal expectations.</li>
-        </ul>
-        <p>This reframed the problem.</p>
-        <p>Instead of guessing which queries were bad, I could now observe where memory was accumulating.</p>
-        <p>One pool stood out.</p>
-        <p>Its name: <em>ritem</em>.</p>
-
-        <h2 id="anomaly">The anomaly</h2>
-        <p>The numbers were immediately suspicious.</p>
-        <ul>
-          <li>~6.1 million allocations</li>
-          <li>~6 million originating from the exact same memory location</li>
-        </ul>
-        <p>Healthy systems don't behave like that.</p>
-        <p>I pulled memory dumps from the affected locations and started comparing them — buffer by buffer — looking for common structure.</p>
-        <p>That's when a pattern emerged.</p>
-        <p>Each stuck buffer contained two long VARCHAR strings — variable-length text fields used by the database. Once these buffers were allocated, they were never reclaimed.</p>
-        <p>The leak wasn't noisy. It was persistent.</p>
-        <p>And persistence is often more dangerous than failure.</p>
-
-        <h2 id="thread">Pulling on the thread</h2>
-        <p>To trace those VARCHARs back to their source, I unloaded and inspected the application's major tables, mapping:</p>
-        <ul>
-          <li>where long VARCHARs were used,</li>
-          <li>how those tables were keyed,</li>
-          <li>and what structural patterns they shared.</li>
-        </ul>
-        <p>This was slow work. Methodical work. The kind that doesn't reward shortcuts.</p>
-        <p>Eventually, the commonality became clear:</p>
-        <p>Every affected table used a composite primary key composed of two VARCHAR columns.</p>
-        <p>For context: a primary key uniquely identifies a row in a table. A composite key does this using multiple columns. Using VARCHARs in such keys is valid — but it turns out to be a sharp edge.</p>
-
-        <h2 id="root-cause">The root cause</h2>
-        <p>With this evidence, the IBM Informix engineering team was able to pinpoint the issue:</p>
-        <p>An internal cleaner thread responsible for reclaiming memory failed to delete rows from tables whose composite primary keys consisted of VARCHAR columns. This resulted in a silent memory leak within Informix's internal data structures.</p>
-        <p>Not in application code. Not in SQL logic. But inside the database engine itself.</p>
-        <p>The kind of issue that survives precisely because it sits below the layers most teams observe.</p>
-
-        <h2 id="resolution">Resolution and impact</h2>
-        <p>Once addressed:</p>
-        <ul>
-          <li>overall memory utilization improved by ~10%,</li>
-          <li>the system remained stable under sustained 20K-user load,</li>
-          <li>and the issue did not recur.</li>
-        </ul>
-        <p>I was recognized by the Director of Engineering at Cisco for owning the problem end-to-end — not just identifying the issue, but coordinating across internal teams and external vendors to drive it to resolution.</p>
-
-        <h2 id="leadership">A note on leadership</h2>
-        <p>This investigation later became part of my leadership essay for MIT's System Design &amp; Management (SDM) program, and ultimately led to an interview.</p>
-        <p>Not because it was a clever bug fix.</p>
-        <p>But because it reflected something deeper about how I approach systems.</p>
-
-        <h2 id="closing">Closing the case</h2>
-        <p>Over time, I've learned that the most consequential failures in large systems rarely come from a single bad line of code.</p>
-        <p>They emerge from:</p>
-        <ul>
-          <li>assumptions that no longer hold,</li>
-          <li>edge cases that quietly compound,</li>
-          <li>and abstractions that leak just enough to matter.</li>
-        </ul>
-        <p>Senior systems work isn't about reacting quickly to loud failures. It's about staying attentive to the quiet ones.</p>
-        <p>It's about knowing when to zoom in — and when to step back and question the frame itself.</p>
-        <p>This wasn't just a memory leak.</p>
-        <p>It was a reminder that long-running systems demand long attention spans — and that real ownership means following the problem to whatever layer it chooses to hide.</p>
-        <p><strong>Case closed.</strong></p>
-      </div>
-    </article>
-  </div>
-
-  <script src="script.js"></script>
-  <script>
-    const tocLinks = document.querySelectorAll('.toc-link');
-    const sections  = document.querySelectorAll('.blog-body h2[id]');
-    const tocNav    = document.querySelector('.toc-nav');
-
-    const progress = document.querySelector('.toc-progress');
-
-    function updateActiveToc() {
-      let currentIndex = 0;
-      sections.forEach((section, i) => {
-        if (section.getBoundingClientRect().top <= 120) currentIndex = i;
-      });
-
-      tocLinks.forEach((link, i) => link.classList.toggle('active', i === currentIndex));
-
-      const navTop  = tocNav.getBoundingClientRect().top;
-      const linkBox = tocLinks[currentIndex].getBoundingClientRect();
-      progress.style.height = Math.max(4, linkBox.top - navTop + linkBox.height / 2) + 'px';
-    }
-
-    window.addEventListener('scroll', updateActiveToc, { passive: true });
-    updateActiveToc();
-  </script>
+  <script src="comments.js"></script>
+  <script src="post.js"></script>
+  <script src="leaves.js"></script>
   <script data-goatcounter="https://srushti.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

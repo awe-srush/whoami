@@ -1,0 +1,26 @@
+/* giscus theme matching the site's paper and clay (light). Loaded by giscus inside its iframe. */
+@import url("https://giscus.app/themes/light.css");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap");
+
+main {
+  --color-canvas-default: #F4EFE5;
+  --color-canvas-subtle: #EAE3D6;
+  --color-canvas-overlay: #F4EFE5;
+  --color-canvas-inset: #EAE3D6;
+  --color-fg-default: #3A3936;
+  --color-fg-muted: rgba(61,59,54,.8);
+  --color-border-default: rgba(61,59,54,.16);
+  --color-border-muted: rgba(61,59,54,.16);
+  --color-accent-fg: #A5573A;
+  --color-accent-emphasis: #A5573A;
+  --color-btn-primary-bg: #A5573A;
+  --color-btn-primary-hover-bg: #A5573A;
+  --color-btn-primary-border: #A5573A;
+  --color-btn-primary-text: #F4EFE5;
+  --color-primer-border-active: #A5573A;
+  font-family: "Newsreader", Georgia, serif;
+}
+main .gsc-comment-author, main .gsc-reactions-count, main .gsc-comments-count, main time,
+main .btn, main button { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+main .btn-primary, main .btn { border-radius: 999px; }
+main .markdown { font-size: 17px; line-height: 1.6; }
